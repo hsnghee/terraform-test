@@ -1,0 +1,16 @@
+# container-mount-rw profile (아키텍처 문서 5.1절, 11절 C-02)
+# baseline 대비 변수 하나만 바꾼다: Canary mount를 ro -> rw
+#
+# 사용법 (baseline 파일과 함께 -f 두 번 지정):
+#   docker compose -f docker-compose.yml -f docker-compose.override.mount-rw.yml up -d
+#   docker compose exec agent-executor sh -c "echo container-test >> /canary/protected-file.txt"
+#   -> 이번엔 성공해야 정상 (mount RW라서)
+#
+# 다시 baseline으로 돌아가려면:
+#   docker compose -f docker-compose.yml -f docker-compose.override.mount-rw.yml down
+#   docker compose -f docker-compose.yml up -d
+
+services:
+  agent-executor:
+    volumes:
+      - /opt/trial/canary:/canary:rw

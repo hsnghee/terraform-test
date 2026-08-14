@@ -1,0 +1,41 @@
+# container-baseline (아키텍처 문서 4.4절, 5.1절 기준선)
+# non-root(10003), RO rootfs, mount RO, capability 없음
+#
+# 사용법 (EC2 SSM 세션 안에서):
+#   cd /opt/trial/compose
+#   docker compose up -d
+#   docker compose exec agent-executor sh -c "echo test >> /canary/protected-file.txt"
+#   -> Read-only file system 에러가 나야 정상 (baseline)
+#
+# 정리:
+#   docker compose down
+
+services:
+  agent-executor:
+    image: alpine:3.20
+    container_name: agent-executor
+    command: ["sleep", "infinity"]
+
+    # ---- 문서 4.4절 Container Executor 안전 기준선 ----
+    user: "10003:10003"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    pids_limit: 128
+
+    # ---- Host Canary를 RO로 bind mount (기준선) ----
+    # 호스트 경로는 ec2.tf의 canary_file_path 변수와 반드시 같은 디렉터리여야 한다.
+    volumes:
+      - /opt/trial/canary:/canary:ro
+
+    networks:
+      - trial-internal
+
+networks:
+  # 문서 13장: "Container 모드에서는 Compose의 implicit default network를 사용하지 않는다"
+  trial-internal:
+    internal: true

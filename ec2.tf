@@ -81,6 +81,7 @@ resource "aws_instance" "trial" {
     -w /etc/sudoers -p wa -k sudoers_change
     -w /etc/sudoers.d -p wa -k sudoers_change
     -a always,exit -F arch=b64 -S execve -k exec_trace
+    -a always,exit -F arch=b64 -S mount -S umount2 -k mount_trace
     RULES_EOF
 
     augenrules --load
@@ -100,6 +101,8 @@ resource "aws_instance" "trial" {
     ausearch -k canary_access 2>/dev/null | tail -50
     echo "-- exec_trace 최근 이벤트 --"
     ausearch -k exec_trace 2>/dev/null | tail -20
+    echo "-- mount_trace 최근 이벤트 --"
+    ausearch -k mount_trace 2>/dev/null | tail -20
     CHECK_EOF
     chmod +x /opt/trial/scripts/check_canary.sh
   EOF

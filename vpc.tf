@@ -46,7 +46,7 @@ resource "aws_security_group" "trial_ec2" {
   vpc_id      = aws_vpc.trial.id
 
   egress {
-    description = "지금은 전체 허용. 나중에 필요한 목적지만 허용하도록 좁혀야 함"
+    description = "Outbound - currently open to all, should be restricted later"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

@@ -80,8 +80,29 @@ terraform apply -var="golden_ami_id=ami-xxxxxxxx"
 terraform destroy
 ```
 
+## 원격 state (아직 비활성화)
+
+지금은 `terraform.tfstate`가 로컬 노트북에만 있어서, 팀원이 각자 apply를 돌리면 서로 다른 결과가 나오거나 충돌이 납니다. `backend.tf`에 S3 원격 state 설정 자리를 미리 만들어뒀고(지금은 주석 처리), 그 S3 버킷/DynamoDB 락 테이블을 만드는 `bootstrap/` 폴더도 별도로 준비해뒀습니다.
+
+여러 명이 같이 apply하게 되는 시점에 이렇게 전환합니다:
+
+```bash
+cd bootstrap
+terraform init
+terraform apply
+# 출력된 state_bucket_name / dynamodb_table_name을 ../backend.tf에 채워넣고 주석 해제
+
+cd ..
+terraform init -migrate-state
+```
+
+## mount 시스템콜 감시
+
+Canary 파일 접근(`canary_access`)이나 프로세스 실행(`exec_trace`)뿐 아니라, 컨테이너/프로세스가 **새로운 마운트를 시도하는 것 자체**도 `mount_trace` 키로 감시하도록 auditd 규칙에 추가했습니다 (`ec2.tf`). `check_canary.sh`에서 같이 확인할 수 있습니다.
+
 ## 다음 단계 제안
 
 1. 이 인프라 위에서 돌아갈 최소 Agent + Policy Gateway + Executor를 별도 코드로 작성 (Phase 1)
 2. Docker Compose override 파일을 권한 Profile별로 분리 (`container-baseline.yml`, `container-mount-rw.yml` 등)
 3. Trusted Orchestrator가 이 Terraform을 호출하는 방식(예: `terraform apply` 를 하위 프로세스로 실행하거나 Terraform Cloud API 사용) 설계
+4. 팀원이 여러 명이서 apply하게 되면 `bootstrap/`으로 원격 state 전환

@@ -1,9 +1,5 @@
-# ----------------------------------------------------------------------------
-# 문서 13장 원칙: "관리 통신: SSM·ECR·CloudWatch VPC Endpoint 또는 제한 NAT"
-# SSM 관리 자체는 VPC Endpoint로 충분하지만, apt/docker pull 등 실제 패키지 설치는
-# 인터넷 접근이 필요하므로 NAT Gateway를 통한 제한된 outbound 경로를 추가한다.
-# (Trial EC2는 여전히 Private Subnet + public IP 없음을 유지)
-# ----------------------------------------------------------------------------
+# NAT Gateway: EC2가 패키지 설치(apt, docker pull)를 하려면 인터넷이 필요해서 추가.
+# EC2는 여전히 Private Subnet에 있고 public IP는 없음 — 나가는 트래픽만 NAT를 거쳐 인터넷으로 나간다.
 
 variable "public_subnet_cidr" {
   description = "NAT Gateway가 위치할 Public Subnet CIDR"
@@ -67,8 +63,7 @@ resource "aws_nat_gateway" "trial" {
   depends_on = [aws_internet_gateway.trial]
 }
 
-# 기존 Private Subnet 라우팅 테이블(vpc.tf의 aws_route_table.private)에
-# NAT를 통한 outbound 경로를 추가한다. Trial EC2는 여전히 public IP를 갖지 않는다.
+# Private Subnet 라우팅 테이블(vpc.tf)에 NAT를 통한 아웃바운드 경로 추가
 resource "aws_route" "private_via_nat" {
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"

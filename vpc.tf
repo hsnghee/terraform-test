@@ -1,9 +1,6 @@
-# ----------------------------------------------------------------------------
-# 다이어그램의 "VPC / Private Subnet / Security Group / IAM" 박스
-# 원칙(아키텍처 문서 13장): EC2는 Private Subnet, public IP 없음
-# 인터넷 없이 관리 가능하도록 SSM용 VPC Interface Endpoint를 사용한다
-# (관리 경로 = SSM Run Command / Port Forwarding, 다이어그램의 "AWS SSM" 박스)
-# ----------------------------------------------------------------------------
+# VPC + Private Subnet + Security Group 생성
+# EC2는 Private Subnet에 두고 public IP는 주지 않는다.
+# 대신 SSM(AWS 원격 관리 서비스)으로 접속할 수 있도록 VPC Endpoint를 둔다.
 
 resource "aws_vpc" "trial" {
   cidr_block           = var.vpc_cidr
@@ -20,7 +17,7 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidr
   availability_zone = var.availability_zone
 
-  # 다이어그램 원칙: public IP 없음
+  # public IP 없음
   map_public_ip_on_launch = false
 
   tags = {
@@ -42,17 +39,14 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# ----------------------------------------------------------------------------
-# 보안 그룹: 다이어그램 원칙 "Security Group inbound 없음"
-# 관리 경로는 SSM(아래 VPC Endpoint)만 사용하므로 인바운드 자체가 필요 없음
-# ----------------------------------------------------------------------------
+# 보안 그룹: 들어오는 트래픽(inbound)은 전부 차단. 접속은 SSM으로만 한다.
 resource "aws_security_group" "trial_ec2" {
   name        = "${var.project_name}-ec2-sg"
   description = "Trial EC2 SG - no inbound, SSM managed only"
   vpc_id      = aws_vpc.trial.id
 
   egress {
-    description = "Outbound - should be restricted to Model Proxy / SSM Endpoint in production"
+    description = "지금은 전체 허용. 나중에 필요한 목적지만 허용하도록 좁혀야 함"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -90,10 +84,7 @@ resource "aws_security_group" "vpc_endpoints" {
   }
 }
 
-# ----------------------------------------------------------------------------
-# SSM 관리를 위한 VPC Interface Endpoint 3종
-# (Private Subnet에 인터넷 경로가 없어도 SSM Run Command / Session Manager 사용 가능)
-# ----------------------------------------------------------------------------
+# SSM 접속용 VPC Endpoint 3개 (인터넷 없이도 SSM 사용 가능하게 해줌)
 locals {
   ssm_endpoint_services = ["ssm", "ssmmessages", "ec2messages"]
 }

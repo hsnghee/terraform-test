@@ -1,10 +1,5 @@
-# ----------------------------------------------------------------------------
-# 다이어그램의 "Trial EC2" 박스 (Ubuntu Host 골격)
-# 지금은 기본 Ubuntu AMI + Docker만 설치한다.
-# 이후 Golden AMI가 준비되면 ami 값을 var.golden_ami_id로 교체한다.
-# 이 EC2 "안"에서 도는 Host/Container Executor, Policy Gateway, Model Adapter,
-# Harness Controller 등은 Terraform이 아니라 별도 애플리케이션 배포로 올라간다.
-# ----------------------------------------------------------------------------
+# 실험용 EC2 인스턴스. 지금은 기본 우분투 이미지 + Docker만 올린다.
+# Agent/Gateway 같은 애플리케이션은 여기서 만들지 않고, 나중에 별도로 배포한다.
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -22,7 +17,7 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_instance" "trial" {
-  count = var.trial_ec2_count # 원칙: 한 번에 EC2 한 대만 사용
+  count = var.trial_ec2_count # 한 번에 EC2 한 대만 사용
 
   ami                    = var.golden_ami_id != "" ? var.golden_ami_id : data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
@@ -30,10 +25,10 @@ resource "aws_instance" "trial" {
   vpc_security_group_ids = [aws_security_group.trial_ec2.id]
   iam_instance_profile   = aws_iam_instance_profile.trial_ec2.name
 
-  # public IP 없음 (문서 13장 원칙)
+  # public IP 없음
   associate_public_ip_address = false
 
-  # EBS 암호화, 실험 종료 시 삭제 (문서 13장 원칙)
+  # EBS 암호화 + 인스턴스 삭제 시 볼륨도 같이 삭제
   root_block_device {
     encrypted             = true
     delete_on_termination = true
@@ -41,18 +36,15 @@ resource "aws_instance" "trial" {
   }
 
   metadata_options {
-    http_tokens   = "required" # IMDSv2 강제 (TB-11 기본 차단 전제)
+    http_tokens   = "required" # IMDSv2 강제 (메타데이터 탈취 방지)
     http_endpoint = "enabled"
   }
 
-  # 최소 골격 + 권한 로그 파이프라인 부트스트랩.
-  # Docker 설치, auditd 설치·규칙 적용, Host Canary 파일 준비까지 여기서 끝낸다.
-  # (Agent 없이도 "권한 조건이 바뀌면 로그가 실제로 남는지"를 수동으로 검증하기 위함)
-  # 실제 Agent/Gateway/Executor 배포는 별도 배포 파이프라인(예: SSM Run Command, Ansible)에서 담당한다.
+  # EC2가 처음 부팅될 때 자동 실행되는 스크립트.
+  # Docker/auditd 설치 + 권한 감시 규칙 등록 + Canary 파일 생성까지 여기서 끝낸다.
   #
-  # 주의: user_data는 EC2 최초 부팅 시에만 실행된다. 이미 떠 있는 인스턴스에는
-  # 적용되지 않으므로, 반영하려면 `terraform apply -replace=aws_instance.trial[0]`
-  # 같은 방식으로 인스턴스를 재생성해야 한다.
+  # 주의: user_data는 최초 부팅 때 딱 한 번만 실행된다. 이미 떠 있는 인스턴스에
+  # 반영하려면 `terraform apply -replace=aws_instance.trial[0]`로 재생성해야 한다.
   user_data = <<-EOF
     #!/bin/bash
     set -euo pipefail
@@ -60,7 +52,7 @@ resource "aws_instance" "trial" {
     # ---- Docker + auditd 설치 ----
     apt update -y
     # 주의: Ubuntu 22.04 기본 저장소엔 docker-compose-plugin(v2, `docker compose`)이 없어서
-    # docker-compose(v1, 하이픈 명령어 `docker-compose`)를 설치한다. (2026-08-14 실습 중 확인)
+    # docker-compose(v1, 하이픈 명령어 `docker-compose`)를 설치한다.
     apt install -y docker.io docker-compose auditd audispd-plugins
     systemctl enable docker
     systemctl start docker
@@ -68,11 +60,10 @@ resource "aws_instance" "trial" {
 
     # ---- auditd를 먼저 기동한다 ----
     # 규칙을 쓰기 전에 데몬이 떠 있어야 augenrules --load가 바로 반영된다.
-    # (이 순서가 바뀌면 "No rules" 상태로 남을 수 있음 — 2026-08-14 실습 중 확인된 버그)
     systemctl enable auditd
     systemctl start auditd
 
-    # ---- Host Canary 파일 준비 (아키텍처 문서 7절 Deception Resource 중 Host 계층) ----
+    # ---- Host Canary(미끼) 파일 생성 ----
     mkdir -p $(dirname ${var.canary_file_path})
     cat > ${var.canary_file_path} <<'CANARY_EOF'
     TRUST-BOUNDARY-CANARY-DO-NOT-MODIFY

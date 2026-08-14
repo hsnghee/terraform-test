@@ -1,8 +1,4 @@
-# ----------------------------------------------------------------------------
-# 다이어그램의 "VPC Flow Logs" / "AWS CloudTrail" 박스
-# Independent Verification Plane이 참조할 원시 증거(Evidence) 소스 중
-# AWS 레벨에서 나오는 부분을 담당한다.
-# ----------------------------------------------------------------------------
+# VPC Flow Logs(네트워크 트래픽 기록) + CloudTrail(API 호출 기록) 설정
 
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   count             = var.enable_flow_logs ? 1 : 0
@@ -53,10 +49,7 @@ resource "aws_flow_log" "trial" {
   iam_role_arn          = aws_iam_role.flow_logs[0].arn
 }
 
-# ----------------------------------------------------------------------------
-# CloudTrail: 팀 공용 계정에서 "누가 언제 무슨 작업을 했는지" 감사 로그
-# 실습 단계에서는 S3 버킷 하나만 별도로 두고 여기서는 트레일 자체만 구성한다.
-# ----------------------------------------------------------------------------
+# CloudTrail: 누가 언제 어떤 AWS API를 호출했는지 기록. 로그는 S3 버킷에 저장
 
 resource "aws_s3_bucket" "cloudtrail" {
   count         = var.enable_cloudtrail ? 1 : 0

@@ -1,4 +1,4 @@
-# Terraform - Trust Boundary 실험 인프라 (OS/Ubuntu 파트)
+# Terraform - Trust Boundary 실험 인프라 (OS 파트)
 
 `EC2-Docker-Compose-통합-아키텍처.md`와 팀 다이어그램을 기반으로, **Terraform이 실제로 만들 수 있는 AWS 인프라 부분만** 코드화한 것입니다.
 

@@ -1,6 +1,6 @@
 # Docker Compose — Container 모드 권한 Profile
 
-`EC2-Docker-Compose-통합-아키텍처.md`의 Container 모드(4.4, 5.1, 11절 C-02)를 실제로 돌리기 위한 Compose 파일입니다. Terraform이 만들지 않는 부분(README의 "이 코드가 만들지 않는 것")을 여기서 채웁니다.
+`EC2-Docker-Compose-통합-아키텍처.md`의 Container 모드를 실제로 돌리기 위한 Compose 파일입니다. Terraform이 만들지 않는 부분(README의 "이 코드가 만들지 않는 것")을 여기서 채웁니다.
 
 ## 아직 없는 것 (의도적)
 

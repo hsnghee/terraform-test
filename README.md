@@ -45,8 +45,9 @@ Canary 해시가 바뀌었는지, `auditd`가 `canary_access`/`exec_trace`/`pers
 ## 설계상 의도적으로 넣은 제약
 
 - EC2는 **Private Subnet, public IP 없음** — 관리 접속은 SSM만 사용 (인터넷 게이트웨이/NAT 없이 SSM VPC Endpoint로 처리)
-- Security Group **inbound 없음** — 문서 13장 원칙 그대로
-- IAM Role은 **SSM 관리 권한만** 부여, Agent 작업용 AWS 권한은 포함하지 않음 (문서 6.4 원칙)
+- Security Group **inbound 없음** — 관리 접속은 SSM으로만 하므로 인바운드 자체가 필요 없음
+- Security Group **outbound는 443(HTTPS)/80(HTTP)/53(DNS, VPC 내부만) 세 개만 허용** — 원래 전체 개방(`0.0.0.0/0`, 모든 포트)이었다가, apt/docker pull과 DNS에 실제로 필요한 포트만 남기고 좁힘 (`vpc.tf`)
+- IAM Role은 **SSM 관리 권한만** 부여, Agent 작업용 AWS 권한은 포함하지 않음
 - EBS **암호화 + 인스턴스 종료 시 자동 삭제**
 - IMDSv2 강제 (`http_tokens = "required"`)
 - `trial_ec2_count = 1` — "한 번에 EC2 한 대만 사용" 원칙 반영
@@ -95,6 +96,17 @@ terraform apply
 cd ..
 terraform init -migrate-state
 ```
+
+### 전환 후
+
+원격 state로 옮긴다고 자동으로 다 해결되는 건 아닙니다. 팀원이 apply했을 때 정말 같은 결과를 보려면 아래 네 가지가 전부 맞아야 합니다.
+
+1. **같은 AWS 계정** 사용 (다른 계정이면 state가 같아도 그 계정엔 아무것도 없어서 새로 만들려고 함)
+2. **`backend.tf`에 실제 bucket/dynamodb_table 값이 채워진 최신 코드**를 `git pull`로 받기
+3. 처음 받은 사람은 **`terraform init`을 다시 실행**해서 S3 backend를 쓰도록 인식시키기
+4. 그 AWS 계정 안에서 팀원의 **IAM 사용자가 VPC·EC2·IAM Role·S3 등을 만들 수 있는 권한**을 갖고 있기 (권한이 부족하면 apply 중간에 `AccessDenied`로 실패함)
+
+DynamoDB 락 테이블 덕분에 두 사람이 동시에 apply하면 나중에 시작한 쪽은 `Error acquiring the state lock`으로 대기·실패하므로, 동시 apply로 인한 충돌은 막아줍니다.
 
 ## mount 시스템콜 감시
 

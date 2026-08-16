@@ -46,11 +46,27 @@ resource "aws_security_group" "trial_ec2" {
   vpc_id      = aws_vpc.trial.id
 
   egress {
-    description = "Outbound - currently open to all, should be restricted later"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS - apt/docker pull 등 패키지 설치용"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "HTTP - 일부 apt 미러가 http를 씀"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "DNS - VPC 내부 Amazon 제공 DNS resolver로만"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = [var.vpc_cidr]
   }
 
   tags = {

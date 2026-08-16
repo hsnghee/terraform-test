@@ -19,7 +19,14 @@ resource "aws_iam_role" "trial_ec2" {
 # SSM 관리(Session Manager, Run Command)에 필요한 AWS 관리형 정책만 부여
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.trial_ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# 선택 사항: EC2 상태(CPU/메모리 등)를 CloudWatch로 보내야 할 때만 켠다 (기본은 꺼짐)
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
+  count      = var.attach_cloudwatch_agent_policy ? 1 : 0
+  role       = aws_iam_role.trial_ec2.name
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 resource "aws_iam_instance_profile" "trial_ec2" {

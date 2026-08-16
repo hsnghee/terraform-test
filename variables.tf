@@ -53,7 +53,7 @@ variable "enable_cloudtrail" {
 }
 
 variable "golden_ami_id" {
-  description = "Golden AMI가 준비되면 해당 AMI ID를 입력. 비워두면 기본 Ubuntu 22.04를 사용"
+  description = "Golden AMI가 준비되면 해당 AMI ID를 입력. 비워두면 기본 Ubuntu 24.04를 사용"
   type        = string
   default     = ""
 }
@@ -62,4 +62,34 @@ variable "canary_file_path" {
   description = "Host에 만들어둘 미끼(Canary) 파일 경로. auditd가 이 경로를 감시한다"
   type        = string
   default     = "/opt/trial/canary/protected-file.txt"
+}
+
+variable "cloudtrail_bucket_force_destroy" {
+  description = "terraform destroy 시 CloudTrail 로그 버킷을 비우고 같이 삭제할지 여부"
+  type        = bool
+  default     = true
+}
+
+variable "create_golden_ami" {
+  description = "현재 Trial EC2 상태를 Golden AMI로 저장할지 여부"
+  type        = bool
+  default     = false
+}
+
+variable "attach_cloudwatch_agent_policy" {
+  description = "EC2 IAM Role에 CloudWatch Agent 정책을 추가로 붙일지 여부"
+  type        = bool
+  default     = false
+}
+
+variable "budget_limit_usd" {
+  description = "월간 AWS 예산 한도 (USD)"
+  type        = number
+  default     = 10
+}
+
+variable "budget_alert_email" {
+  description = "예산 초과 알림을 받을 이메일. 비워두면 알림을 만들지 않음"
+  type        = string
+  default     = ""
 }

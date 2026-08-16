@@ -24,3 +24,13 @@ output "canary_file_path" {
   description = "Host Canary 파일 경로 (auditd -w 규칙 대상). SSM 접속 후 /opt/trial/scripts/check_canary.sh 실행해서 확인"
   value       = var.canary_file_path
 }
+
+output "golden_ami_id" {
+  description = "create_golden_ami = true로 apply한 경우에만 값이 생김"
+  value       = try(aws_ami_from_instance.golden[0].id, null)
+}
+
+output "cloudtrail_bucket" {
+  description = "CloudTrail 로그가 쌓이는 S3 버킷 이름"
+  value       = try(aws_s3_bucket.cloudtrail[0].bucket, null)
+}

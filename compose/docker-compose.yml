@@ -2,11 +2,11 @@
 # Canary 파일도 읽기 전용으로 마운트한 가장 안전한 기본 상태
 #
 # 사용법 (EC2 SSM 세션 안, /opt/trial/compose 에서):
-#   docker-compose up -d
-#   docker-compose exec agent-executor sh -c "echo test >> /canary/protected-file.txt"
+#   docker compose up -d
+#   docker compose exec agent-executor sh -c "echo test >> /canary/protected-file.txt"
 #   -> Read-only file system 에러가 나야 정상 (baseline)
 #
-# 정리: docker-compose down
+# 정리: docker compose down
 
 services:
   agent-executor:

@@ -46,7 +46,7 @@ resource "aws_security_group" "trial_ec2" {
   vpc_id      = aws_vpc.trial.id
 
   egress {
-    description = "HTTPS - apt/docker pull 등 패키지 설치용"
+    description = "HTTPS - for apt/docker pull package installs"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -54,7 +54,7 @@ resource "aws_security_group" "trial_ec2" {
   }
 
   egress {
-    description = "HTTP - 일부 apt 미러가 http를 씀"
+    description = "HTTP - some apt mirrors still use http"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -62,7 +62,7 @@ resource "aws_security_group" "trial_ec2" {
   }
 
   egress {
-    description = "DNS - VPC 내부 Amazon 제공 DNS resolver로만"
+    description = "DNS - VPC internal, Amazon-provided DNS resolver only"
     from_port   = 53
     to_port     = 53
     protocol    = "udp"

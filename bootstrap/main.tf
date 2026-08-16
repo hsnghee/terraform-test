@@ -26,13 +26,20 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile != "" ? var.aws_profile : null
 }
 
 variable "aws_region" {
   description = "Sandbox 계정에서 사용할 리전"
   type        = string
   default     = "us-east-1"
+}
+
+variable "aws_profile" {
+  description = "~/.aws/credentials에 등록해둔 AWS CLI 프로필 이름. 비워두면 기본 프로필을 씀"
+  type        = string
+  default     = ""
 }
 
 variable "state_bucket_name" {

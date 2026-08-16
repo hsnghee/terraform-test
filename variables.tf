@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "aws_profile" {
+  description = "~/.aws/credentials에 등록해둔 AWS CLI 프로필 이름 (팀 공용 계정용 IAM 사용자 Access Key를 이 프로필로 등록). 비워두면 기본 프로필/환경변수(AWS_PROFILE 등)를 그대로 씀"
+  type        = string
+  default     = ""
+}
+
 variable "project_name" {
   description = "리소스 이름 접두사"
   type        = string

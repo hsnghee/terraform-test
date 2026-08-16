@@ -1,23 +1,38 @@
 # Terraform - Trust Boundary 실험 인프라 (OS 파트)
 
-`EC2-Docker-Compose-통합-아키텍처.md` 다이어그램에서 **실제로 AWS에 떠야 하는 부분**만 코드화한 것. 
+`EC2-Docker-Compose-통합-아키텍처.md` 다이어그램에서 **실제로 AWS에 떠야 하는 부분**만 코드화한 것. Agent/Gateway 같은 애플리케이션 로직은 여기 없음 (아래 "안 만드는 것" 참고).
 
 ---
 
 ## 0. 사전 준비
 
-- IAM 사용자로 로그인 (root 아님), VPC·EC2·IAM·S3·CloudTrail 만들 수 있는 권한 필요 → 랩이면 `AdministratorAccess`
+- 팀 공용 AWS 계정의 IAM 사용자로 로그인 (root 아님), VPC·EC2·IAM·S3·CloudTrail 만들 수 있는 권한 필요 → 랩이면 `AdministratorAccess`
 - Terraform `>= 1.6.0`, AWS Provider `~> 6.0`
+
+**공용 계정 연결 (최초 1회, 터미널에서)**
+
+```bash
+aws configure --profile whs-team   # 팀 공용 계정 Access Key ID / Secret 입력, region은 us-east-1
+aws sts get-caller-identity --profile whs-team   # 공용 계정 맞는지 확인
+```
+
+Access Key는 절대 git에 올리지 않음 — `aws configure`는 로컬 `~/.aws/credentials`에만 저장됨.
 
 ---
 
-## 1. 설정값 입력 (선택)
+## 1. 설정값 입력
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-기본값 그대로 apply해도 동작함. 바꾸고 싶으면 `terraform.tfvars`에서:
+`terraform.tfvars`에서 방금 만든 프로필 이름을 넣음 (필수 — 안 넣으면 기본 프로필로 apply되어 엉뚱한 계정에 만들어질 수 있음):
+
+```hcl
+aws_profile = "whs-team"
+```
+
+나머지는 기본값 그대로 apply해도 동작함. 바꾸고 싶으면 같이:
 
 ```hcl
 budget_alert_email             = "you@example.com"  # 예산 80% 초과 알림 받을 이메일, 비우면 알림 없이 한도만 생성
@@ -79,8 +94,10 @@ terraform destroy
 
 ## 원격 state (아직 비활성화, 팀원 여러 명이 apply할 때 전환)
 
+이제 팀 공용 계정을 같이 쓰니까, 여러 명이 apply하기 시작하는 시점엔 바로 전환하는 걸 권장. (`bootstrap/`도 같은 프로필로 apply)
+
 ```bash
-cd bootstrap && terraform init && terraform apply
+cd bootstrap && terraform init && terraform apply -var="aws_profile=whs-team"
 # 출력된 state_bucket_name / dynamodb_table_name을 ../backend.tf에 채워넣고 주석 해제
 cd .. && terraform init -migrate-state
 ```

@@ -17,5 +17,6 @@
 #     region         = "us-east-1"
 #     dynamodb_table = "<bootstrap apply 결과의 dynamodb_table_name>"
 #     encrypt        = true
+#     profile        = "whs-team" # 팀 공용 계정 CLI 프로필. backend 블록은 변수(var.aws_profile)를 못 써서 직접 이름을 적어야 함
 #   }
 # }
